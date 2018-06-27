@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import pickle
-import utils
+from . import utils
 import time
 
 

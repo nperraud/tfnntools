@@ -6,4 +6,12 @@ TFNNTools is a small collection of Deep Learning tool for TensorFlow. It is inte
 Installation
 ------------
 
+Since this is intented as a package for developpement, we highly suggest to install it with a simlink.
+
+```
+git clone git@github.com:nperraud/tfnntools.git
+cd tfnntools
+pip install -r requirements.txt
+pip install -e .
+```
 

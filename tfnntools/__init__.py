@@ -1,3 +1,3 @@
-import nnsystem
-import utils
-import blocks
+from . import nnsystem
+from . import utils
+from . import blocks
