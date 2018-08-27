@@ -15,13 +15,15 @@ def _tf_variable(name, shape, initializer):
     Returns:
       Variable Tensor
     """
+    # Why do we need this 'True'?
+    # When do we use _tf_variable?
     if True:  # with tf.device('/cpu:0'):
         var = tf.get_variable(name, shape, initializer=initializer)
     return var
 
 
 def numel(x):
-    ''' Return the number of element in x '''
+    ''' Return the number of elements in x '''
     return prod(tf.shape(x))  # tf.size?
 
 
@@ -32,12 +34,12 @@ def reshape2d(x, name=None):
 
 
 def reshape4d(x, sx, sy, nc, name=None):
-    """Squeeze x into a 2d matrix."""
+    """Squeeze x into a 4d matrix."""
     return tf.reshape(x, [tf.shape(x)[0], sx, sy, nc], name=name)
 
 
 def lrelu(x, leak=0.2, name="lrelu"):
-    """Leak relu."""
+    """Leaky relu, fixes dying ReLU that occurs when x<0."""
     return tf.maximum(x, leak * x, name=name)
 
 
