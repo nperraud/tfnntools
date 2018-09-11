@@ -1,2 +1,3 @@
 .DS_Store
 tfnntools.egg-info
+*.pyc
