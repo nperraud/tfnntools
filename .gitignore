@@ -1,2 +1,4 @@
+tfnntools/
+_pycache__
 .DS_Store
 tfnntools.egg-info
