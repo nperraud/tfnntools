@@ -1,10 +1,4 @@
 import tensorflow as tf
-from tensorflow.contrib.rnn import ConvLSTMCell
-from tensorflow.contrib.rnn import LSTMCell
-from tensorflow.contrib.rnn import MultiRNNCell
-from numpy import prod
-from tfblocks import *
-
 
 
 def rprint(msg, reuse=False):
