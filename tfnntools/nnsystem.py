@@ -198,7 +198,7 @@ class NNSystem(object):
         return False
 
     def outputs(self, checkpoint=None, **kwargs):
-        outputs = self._net.outputs()
+        outputs = self._net.outputs
 
         with tf.Session() as self._sess:
 
@@ -208,8 +208,8 @@ class NNSystem(object):
                 raise ValueError("Unable to load the model")
 
             self._sess.run([tf.local_variables_initializer()])
-
             feed_dict = self._get_dict(**kwargs)
+
             return self._sess.run(outputs, feed_dict=feed_dict)
 
     def loss(self, dataset, checkpoint=None):
