@@ -4,16 +4,18 @@ import os
 import pickle
 from . import utils
 import time
+import yaml
 
 
 class NNSystem(object):
     """A system to handle Neural Network"""
-    def default_params(self, params):
+    def default_params(self):
         d_param = dict()
         d_param['optimization'] = dict()
         d_param['optimization']['learning_rate'] = 1e-4
         d_param['optimization']['batch_size'] = 8
         d_param['optimization']['epoch'] = 100
+        d_param['optimization']['batch_size'] = 8
 
         d_param['net'] = dict()
 
@@ -22,16 +24,24 @@ class NNSystem(object):
         d_param['summary_every'] = 200
         d_param['print_every'] = 100
         d_param['save_every'] = 10000
-        return utils.arg_helper(params, d_param)
+        return d_param
 
-    def __init__(self, net, params={}, name=None):
+    def __init__(self, model, params={}, name=None, debug_mode=False):
         """Build the TF graph."""
-        self._params = self.default_params(params)
+        self._debug_mode=debug_mode
+        if self._debug_mode:
+            print('User parameters NNSystem...')
+            print(yaml.dump(params))
+
+        self._params = utils.arg_helper(params, self.default_params())
+        if self._debug_mode:
+            print('\nParameters used for the NNSystem..')
+            print(yaml.dump(self._params))
         tf.reset_default_graph()
         if name:
-            self._net = net(self._params['net'], name=name)
+            self._net = model(self.params['net'], name=name)
         else:
-            self._net = net(self._params['net'])
+            self._net = model(self.params['net'])
         self._name = self._net.name
         self._add_optimizer()
         self._saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
@@ -46,20 +56,23 @@ class NNSystem(object):
             self._optimize = optimizer.minimize(self._net.loss)
         tf.summary.scalar("training/loss", self._net.loss, collections=["train"])
 
-    def _get_dict(self, **kwargs):
+    def _get_dict(self, index=None, **kwargs):
         """Return a dictionary with the argument for the architecture."""
         feed_dict = dict()
         for key, value in kwargs.items():
             if value is not None:
-                feed_dict[getattr(self._net, key)] = value
+                if index:
+                    feed_dict[getattr(self._net, key)] = value[index]
+                else:
+                    feed_dict[getattr(self._net, key)] = value
         return feed_dict
 
     def train(self, dataset, resume=False):
 
         n_data = dataset.N
-        batch_size = self._params['optimization']['batch_size']
+        batch_size = self.params['optimization']['batch_size']
         self._counter = 1
-        self._n_epoch = self._params['optimization']['epoch']
+        self._n_epoch = self.params['optimization']['epoch']
         self._total_iter = self._n_epoch * (n_data // batch_size) - 1
         self._n_batch = n_data // batch_size
 
@@ -75,8 +88,8 @@ class NNSystem(object):
                 self.load()
             else:
                 self._sess.run(tf.global_variables_initializer())
-                utils.saferm(self._params['summary_dir'])
-                utils.saferm(self._params['save_dir'])
+                utils.saferm(self.params['summary_dir'])
+                utils.saferm(self.params['save_dir'])
 
             self._summary_writer = tf.summary.FileWriter(
                 self._params['summary_dir'], self._sess.graph)
@@ -93,21 +106,21 @@ class NNSystem(object):
                             dataset.iter(batch_size)):
 
                         if resume:
-                            self._counter = self._params['curr_counter']
+                            self._counter = self.params['curr_counter']
                             resume = False
                         else:
                             self._params['curr_counter'] = self._counter
                         feed_dict = self._get_dict(**self._net.batch2dict(batch))
-                        curr_loss = self._sess.run([self._net.loss, self._optimize], feed_dict)[0]
+                        curr_loss = self._run_optimization(feed_dict)
                         epoch_loss += curr_loss
 
-                        if np.mod(self._counter, self._params['print_every']) == 0:
+                        if np.mod(self._counter, self.params['print_every']) == 0:
                             self._print_log(idx, curr_loss, epoch_loss/idx)
 
-                        if np.mod(self._counter, self._params['summary_every']) == 0:
+                        if np.mod(self._counter, self.params['summary_every']) == 0:
                             self._train_log(feed_dict)
 
-                        if (np.mod(self._counter, self._params['save_every']) == 0) | self._save_current_step:
+                        if (np.mod(self._counter, self.params['save_every']) == 0) | self._save_current_step:
                             self._save(self._counter)
                             self._save_current_step = False
                         self._counter += 1
@@ -119,10 +132,12 @@ class NNSystem(object):
             except KeyboardInterrupt:
                 pass
             self._save(self._counter)
+    def _run_optimization(self, feed_dict):
+         return self._sess.run([self.net.loss, self._optimize], feed_dict)[0]
 
     def _print_log(self, idx, curr_loss, mean_loss):
         current_time = time.time()
-        batch_size = self._params['optimization']['batch_size']
+        batch_size = self.params['optimization']['batch_size']
 
         print("    * Epoch: [{:2d}] [{:4d}/{:4d}] "
               "Counter:{:2d}\t"
@@ -148,24 +163,24 @@ class NNSystem(object):
 
 
     def _save(self, step):
-        if not os.path.exists(self._params['save_dir']):
-            os.makedirs(self._params['save_dir'])
+        if not os.path.exists(self.params['save_dir']):
+            os.makedirs(self.params['save_dir'])
 
         self._saver.save(
             self._sess,
-            os.path.join(self._params['save_dir'], self._net.name),
+            os.path.join(self.params['save_dir'], self._net.name),
             global_step=step)
         self._save_obj()
         print('Model saved!')
 
     def _save_obj(self):
         # Saving the objects:
-        if not os.path.exists(self._params['save_dir']):
-            os.makedirs(self._params['save_dir'], exist_ok=True)
+        if not os.path.exists(self.params['save_dir']):
+            os.makedirs(self.params['save_dir'], exist_ok=True)
 
-        path_param = os.path.join(self._params['save_dir'], 'params.pkl')
+        path_param = os.path.join(self.params['save_dir'], 'params.pkl')
         with open(path_param, 'wb') as f:
-            pickle.dump(self._params, f)
+            pickle.dump(self.params, f)
 
     def load(self, sess=None, checkpoint=None):
         '''
@@ -180,7 +195,7 @@ class NNSystem(object):
         if checkpoint:
             file_name = os.path.join(
                 self._savedir,
-                self._net.name+ '-' + str(checkpoint))
+                self.net.name+ '-' + str(checkpoint))
         else:
             file_name = None
 
@@ -189,7 +204,7 @@ class NNSystem(object):
             self._saver.restore(self._sess, file_name)
             return True
 
-        checkpoint_dir = self._params['save_dir']
+        checkpoint_dir = self.params['save_dir']
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
             self._saver.restore(self._sess, ckpt.model_checkpoint_path)
@@ -222,9 +237,17 @@ class NNSystem(object):
             loss = 0
             batch_size = self._params['optimization']['batch_size']
             for idx, batch in enumerate(dataset.iter(batch_size)):
-                feed_dict = self._get_dict(**self._net.batch2dict(batch))
-                loss += self._sess.run(self._net.loss, feed_dict)
+                feed_dict = self._get_dict(**self.net.batch2dict(batch))
+                loss += self._sess.run(self.net.loss, feed_dict)
         return loss/idx
+    @property
+    def params(self):
+        return self._params
+
+    @property
+    def net(self):
+        return self._net
+        
 
 class ValidationNNSystem(NNSystem):
     def __init__(self, *args, **kwargs):
