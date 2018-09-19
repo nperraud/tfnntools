@@ -152,7 +152,7 @@ class NNSystem(object):
               "Batch loss:{:.8f}\t"
               "Mean loss:{:.8f}\t".format(
               self._epoch, 
-              idx, 
+              idx+1, 
               self._n_batch,
               self._counter,
               (current_time - self._time['start_time']) / 60,
