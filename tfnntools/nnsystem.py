@@ -111,11 +111,12 @@ class NNSystem(object):
                         else:
                             self._params['curr_counter'] = self._counter
                         feed_dict = self._get_dict(**self._net.batch2dict(batch))
-                        curr_loss = self._run_optimization(feed_dict)
-                        epoch_loss += curr_loss
+                        curr_loss = self._run_optimization(feed_dict, idx)
+                        # epoch_loss += curr_loss
 
                         if np.mod(self._counter, self.params['print_every']) == 0:
-                            self._print_log(idx, curr_loss, epoch_loss/idx)
+                            # self._print_log(idx, curr_loss, epoch_loss/idx)
+                            self._print_log(idx, curr_loss)
 
                         if np.mod(self._counter, self.params['summary_every']) == 0:
                             self._train_log(feed_dict)
@@ -124,21 +125,25 @@ class NNSystem(object):
                             self._save(self._counter)
                             self._save_current_step = False
                         self._counter += 1
-                    epoch_loss /= self._n_batch
-                    print(" - Epoch {}, train loss: {:f}".format(self._epoch, epoch_loss))
+                    # epoch_loss /= self._n_batch
+                    # print(" - Epoch {}, train loss: {:f}".format(self._epoch, epoch_loss))
 
                     self._epoch += 1
                 print('Training done')
             except KeyboardInterrupt:
                 pass
             self._save(self._counter)
-    def _run_optimization(self, feed_dict):
-         return self._sess.run([self.net.loss, self._optimize], feed_dict)[0]
 
-    def _print_log(self, idx, curr_loss, mean_loss):
+    def _run_optimization(self, feed_dict, idx):
+            if idx==0:
+                self._epoch_loss = 0
+            curr_loss = self._sess.run([self.net.loss, self._optimize], feed_dict)[0]
+            self._epoch_loss += curr_loss
+            return curr_loss
+
+    def _print_log(self, idx, curr_loss):
         current_time = time.time()
         batch_size = self.params['optimization']['batch_size']
-
         print("    * Epoch: [{:2d}] [{:4d}/{:4d}] "
               "Counter:{:2d}\t"
               "({:4.1f} min\t"
@@ -146,15 +151,15 @@ class NNSystem(object):
               "{:4.2f} sec/batch)\t"
               "Batch loss:{:.8f}\t"
               "Mean loss:{:.8f}\t".format(
-                  self._epoch, 
-                  idx, 
-                  self._n_batch,
-                  self._counter,
-                  (current_time - self._time['start_time']) / 60,
-                  self._params['print_every'] * batch_size / (current_time - self._time['prev_iter_time']),
-                  (current_time - self._time['prev_iter_time']) / self._params['print_every'],
-                  curr_loss,
-                  mean_loss))
+              self._epoch, 
+              idx, 
+              self._n_batch,
+              self._counter,
+              (current_time - self._time['start_time']) / 60,
+              self._params['print_every'] * batch_size / (current_time - self._time['prev_iter_time']),
+              (current_time - self._time['prev_iter_time']) / self._params['print_every'],
+              curr_loss,
+              self._epoch_loss/(idx+1)))
         self._time['prev_iter_time'] = current_time
 
     def _train_log(self, feed_dict):
