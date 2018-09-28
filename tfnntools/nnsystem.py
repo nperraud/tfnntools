@@ -61,11 +61,16 @@ class NNSystem(object):
         feed_dict = dict()
         for key, value in kwargs.items():
             if value is not None:
-                if index:
-                    feed_dict[getattr(self._net, key)] = value[index]
-                else:
                     feed_dict[getattr(self._net, key)] = value
+        if index:
+            feed_dict = self._slice_feed_dict(feed_dict, index)
         return feed_dict
+
+    def _slice_feed_dict(self, feed_dict, index):
+        new_feed_dict = dict()
+        for key, value in feed_dict.items():
+            new_feed_dict[key] = value[index]
+        return new_feed_dict
 
     def train(self, dataset, resume=False):
 
