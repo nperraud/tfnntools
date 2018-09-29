@@ -42,6 +42,7 @@ class NNSystem(object):
             self._net = model(self.params['net'], name=name)
         else:
             self._net = model(self.params['net'])
+        self._params['net'] = self.net.params
         self._name = self._net.name
         self._add_optimizer()
         self._saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
