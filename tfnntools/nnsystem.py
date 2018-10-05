@@ -220,8 +220,9 @@ class NNSystem(object):
         if ckpt and ckpt.model_checkpoint_path:
             self._saver.restore(self._sess, ckpt.model_checkpoint_path)
             return True
-
+        print(" [*] No checkpoint found in {}".format(checkpoint_dir))
         return False
+
 
     def outputs(self, checkpoint=None, **kwargs):
         outputs = self._net.outputs
