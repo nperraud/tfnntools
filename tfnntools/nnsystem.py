@@ -5,6 +5,7 @@ import pickle
 from . import utils
 import time
 import yaml
+from copy import deepcopy
 
 
 class NNSystem(object):
@@ -33,7 +34,7 @@ class NNSystem(object):
             print('User parameters NNSystem...')
             print(yaml.dump(params))
 
-        self._params = utils.arg_helper(params, self.default_params())
+        self._params = deepcopy(utils.arg_helper(params, self.default_params()))
         if self._debug_mode:
             print('\nParameters used for the NNSystem..')
             print(yaml.dump(self._params))
@@ -42,7 +43,7 @@ class NNSystem(object):
             self._net = model(self.params['net'], name=name)
         else:
             self._net = model(self.params['net'])
-        self._params['net'] = self.net.params
+        self._params['net'] = deepcopy(self.net.params)
         self._name = self._net.name
         self._add_optimizer()
         self._saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
@@ -205,7 +206,7 @@ class NNSystem(object):
 
         if checkpoint:
             file_name = os.path.join(
-                self._savedir,
+                self.params['save_dir'],
                 self.net.name+ '-' + str(checkpoint))
         else:
             file_name = None

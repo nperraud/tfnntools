@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tfnntools.utils import arg_helper
 import yaml
+from copy import deepcopy
 
 def rprint(msg, reuse=False):
     """Print message only if reuse is False.
@@ -20,7 +21,7 @@ class BaseNet(object):
         if self._debug_mode:
             print('User parameters...')
             print(yaml.dump(params))
-        self._params = arg_helper(params, self.default_params())
+        self._params = deepcopy(arg_helper(params, self.default_params()))
         if self._debug_mode:
             print('\nParameters used for the network...')
             print(yaml.dump(self._params))
