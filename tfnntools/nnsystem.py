@@ -274,16 +274,17 @@ class ValidationNNSystem(NNSystem):
         self._validation_dataset = dataset_validation
         super().train(dataset_train, resume=resume)
 
-    def _train_log(self, feed_dict):
+    def _train_log(self, feed_dict=dict()):
         super()._train_log(feed_dict)
         loss = 0
         batch_size = self._params['optimization']['batch_size']
         for idx, batch in enumerate(
             self._validation_dataset.iter(batch_size)):
 
-            feed_dict = self._get_dict(**self._net.batch2dict(batch))
-            loss += self._sess.run(self._net.loss, feed_dict)
+            feed_dict2 = self._get_dict(**self._net.batch2dict(batch))
+            loss += self._sess.run(self._net.loss, feed_dict2)
         loss = loss/idx
         print("Validation loss: {}".format(loss))
-        summary = self._sess.run(self._summaries_validation, feed_dict={self._validation_loss: loss})
+        feed_dict[self._validation_loss] = loss
+        summary = self._sess.run(self._summaries_validation, feed_dict=feed_dict)
         self._summary_writer.add_summary(summary, self._counter)
