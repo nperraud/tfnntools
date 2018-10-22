@@ -91,7 +91,7 @@ class NNSystem(object):
 
         with tf.Session(config=run_config) as self._sess:
             if resume:
-                print('Load weights in the nework')
+                print('Load weights in the network')
                 self.load()
             else:
                 self._sess.run(tf.global_variables_initializer())
