@@ -1,4 +1,4 @@
-numpy=1.14.5
-tensorflow
-# tensorflow-gpu
+numpy
+# tensorflow
+tensorflow-gpu
 matplotlib

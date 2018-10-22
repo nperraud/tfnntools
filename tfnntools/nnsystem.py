@@ -224,6 +224,19 @@ class NNSystem(object):
         print(" [*] No checkpoint found in {}".format(checkpoint_dir))
         return False
 
+    def forward(self, checkpoint=None, **kwargs):
+        outputs = self._net.outputs
+        with tf.Session() as self._sess:
+
+            if self.load(checkpoint=checkpoint):
+                print("Model loaded.")
+            else:
+                raise ValueError("Unable to load the model")
+
+            self._sess.run([tf.local_variables_initializer()])
+
+            feed_dict = self._get_dict(**kwargs)
+            return self._sess.run(outputs, feed_dict=feed_dict)
 
     def outputs(self, checkpoint=None, **kwargs):
         outputs = self._net.outputs
