@@ -173,8 +173,10 @@ class NNSystem(object):
         summary = self._sess.run(self._summaries, feed_dict=feed_dict)
         self._summary_writer.add_summary(summary, self._counter)
 
-
-    def _save(self, step):
+ 
+    def _save(self, step=None):
+        if step is None:
+            step = self._counter
         if not os.path.exists(self.params['save_dir']):
             os.makedirs(self.params['save_dir'])
 
