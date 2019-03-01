@@ -11,12 +11,12 @@ from copy import deepcopy
 class NNSystem(object):
     """A system to handle Neural Network"""
     def default_params(self):
+
         d_param = dict()
-        d_param['optimization'] = dict()
-        d_param['optimization']['learning_rate'] = 1e-4
-        d_param['optimization']['batch_size'] = 8
-        d_param['optimization']['epoch'] = 100
-        d_param['optimization']['batch_size'] = 8
+        d_param['learning_rate'] = 1e-4
+        d_param['batch_size'] = 8
+        d_param['epoch'] = 100
+        d_param['batch_size'] = 8
 
         d_param['net'] = dict()
 
@@ -25,24 +25,29 @@ class NNSystem(object):
         d_param['summary_every'] = 200
         d_param['print_every'] = 100
         d_param['save_every'] = 10000
+
+        print('NNSysten params', len(d_param))
+
         return d_param
 
     def __init__(self, model, params={}, name=None, debug_mode=False):
         """Build the TF graph."""
+        print('init NNSystem')
         self._debug_mode=debug_mode
         if self._debug_mode:
             print('User parameters NNSystem...')
             print(yaml.dump(params))
 
         self._params = deepcopy(utils.arg_helper(params, self.default_params()))
+        print('NNSystem self._params')
         if self._debug_mode:
             print('\nParameters used for the NNSystem..')
             print(yaml.dump(self._params))
         tf.reset_default_graph()
         if name:
-            self._net = model(self.params['net'], name=name)
+            self._net = model(self.params, name=name)
         else:
-            self._net = model(self.params['net'])
+            self._net = model(self.params)
         self._params['net'] = deepcopy(self.net.params)
         self._name = self._net.name
         self._add_optimizer()
@@ -53,7 +58,7 @@ class NNSystem(object):
     def _add_optimizer(self):
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
-            learning_rate = self._params['optimization']['learning_rate']
+            learning_rate = self._params['learning_rate']
             optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
             self._optimize = optimizer.minimize(self._net.loss)
         tf.summary.scalar("training/loss", self._net.loss, collections=["train"])
@@ -77,9 +82,9 @@ class NNSystem(object):
     def train(self, dataset, resume=False):
 
         n_data = dataset.N
-        batch_size = self.params['optimization']['batch_size']
+        batch_size = self.params['batch_size']
         self._counter = 1
-        self._n_epoch = self.params['optimization']['epoch']
+        self._n_epoch = self.params['epoch']
         self._total_iter = self._n_epoch * (n_data // batch_size) - 1
         self._n_batch = n_data // batch_size
 
@@ -150,7 +155,7 @@ class NNSystem(object):
 
     def _print_log(self, idx, curr_loss):
         current_time = time.time()
-        batch_size = self.params['optimization']['batch_size']
+        batch_size = self.params['batch_size']
         print("    * Epoch: [{:2d}] [{:4d}/{:4d}] "
               "Counter:{:2d}\t"
               "({:4.1f} min\t"
@@ -248,7 +253,7 @@ class NNSystem(object):
             else:
                 raise ValueError("Unable to load the model")
             loss = 0
-            batch_size = self._params['optimization']['batch_size']
+            batch_size = self._params['batch_size']
             for idx, batch in enumerate(dataset.iter(batch_size)):
                 feed_dict = self._get_dict(**self.net.batch2dict(batch))
                 loss += self._sess.run(self.net.loss, feed_dict)
@@ -264,6 +269,7 @@ class NNSystem(object):
 
 class ValidationNNSystem(NNSystem):
     def __init__(self, *args, **kwargs):
+        print('init ValidationNNSystem')
         super().__init__(*args, **kwargs)
         self._validation_loss = tf.placeholder(tf.float32, name='validation_loss')
         tf.summary.scalar("validation/loss", self._validation_loss, collections=["validation"])
@@ -277,7 +283,7 @@ class ValidationNNSystem(NNSystem):
     def _train_log(self, feed_dict=dict()):
         super()._train_log(feed_dict)
         loss = 0
-        batch_size = self._params['optimization']['batch_size']
+        batch_size = self._params['batch_size']
         for idx, batch in enumerate(
             self._validation_dataset.iter(batch_size)):
 

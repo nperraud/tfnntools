@@ -5,11 +5,9 @@ import tensorflow.contrib.slim as slim
 import pickle
 
 def arg_helper(params, d_param):
-    for key in d_param.keys():
-        params[key] = params.get(key, d_param[key])
-        if type(params[key]) is dict:
-            params[key] = arg_helper(params[key], d_param[key])
-    return params
+    print('arg_helper params overwrite params:{} default:{}'.format(len(params),len(d_param)))
+    z = {**d_param, **params}
+    return z
 
 def test_resume(try_resume, params):
     """ Try to load the parameters saved in `params['save_dir']+'params.pkl',`

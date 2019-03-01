@@ -12,16 +12,22 @@ def rprint(msg, reuse=False):
 
 class BaseNet(object):
     """Base Net abstract class."""
+    @classmethod
     def default_params(self):
         d_params = dict()
+        print('BaseNet default params')
         return d_params
 
     def __init__(self, params={}, name="BaseNet", debug_mode=False):
+        print('BaseNet init')
         self._debug_mode=debug_mode
         if self._debug_mode:
             print('User parameters...')
             print(yaml.dump(params))
+        print('\tBEFORE -- params:{}, self.default_params:{}'.format(len(params),len(self.default_params())))
         self._params = deepcopy(arg_helper(params, self.default_params()))
+        print('\tAFTER -- params:{}, self.default_params:{}'.format(len(params),len(self.default_params())))
+        print('BaseNet self._params')
         if self._debug_mode:
             print('\nParameters used for the network...')
             print(yaml.dump(self._params))
