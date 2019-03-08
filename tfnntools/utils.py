@@ -5,7 +5,6 @@ import tensorflow.contrib.slim as slim
 import pickle
 
 def arg_helper(params, d_param):
-    print('arg_helper params overwrite params:{} default:{}'.format(len(params),len(d_param)))
     z = {**d_param, **params}
     return z
 

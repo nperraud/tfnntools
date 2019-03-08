@@ -242,7 +242,6 @@ def deconv2d(imgs,
              output_shape=None):
 
     weights_initializer = tf.contrib.layers.xavier_initializer()
-    # was
     # weights_initializer = tf.random_normal_initializer(stddev=stddev)
     const = tf.constant_initializer(0.0)
     b = tf.shape(imgs)[0]

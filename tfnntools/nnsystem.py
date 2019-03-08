@@ -32,16 +32,13 @@ class NNSystem(object):
 
     def __init__(self, model, params={}, name=None, debug_mode=False):
         """Build the TF graph."""
-        print('init NNSystem')
         self._debug_mode=debug_mode
         if self._debug_mode:
             print('User parameters NNSystem...')
             print(yaml.dump(params))
 
         self._params = deepcopy(utils.arg_helper(params, self.default_params()))
-        print('NNSystem self._params')
         if self._debug_mode:
-            print('\nParameters used for the NNSystem..')
             print(yaml.dump(self._params))
         tf.reset_default_graph()
         if name:
@@ -269,7 +266,6 @@ class NNSystem(object):
 
 class ValidationNNSystem(NNSystem):
     def __init__(self, *args, **kwargs):
-        print('init ValidationNNSystem')
         super().__init__(*args, **kwargs)
         self._validation_loss = tf.placeholder(tf.float32, name='validation_loss')
         tf.summary.scalar("validation/loss", self._validation_loss, collections=["validation"])
