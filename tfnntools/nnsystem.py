@@ -220,8 +220,14 @@ class NNSystem(object):
 
         checkpoint_dir = self.params['save_dir']
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        print(ckpt.model_checkpoint_path)
         if ckpt and ckpt.model_checkpoint_path:
-            self._saver.restore(self._sess, ckpt.model_checkpoint_path)
+#             self._saver.restore(self._sess, ckpt.model_checkpoint_path)
+            file = ckpt.model_checkpoint_path.split('/')[-1]
+            file_name = os.path.join(
+                self.params['save_dir'],file)
+            print('The last checkpoint is found at {}'.format(file_name))
+            self._saver.restore(self._sess, file_name)
             return True
         print(" [*] No checkpoint found in {}".format(checkpoint_dir))
         return False
