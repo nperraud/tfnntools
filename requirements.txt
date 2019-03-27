@@ -1,21 +1,4 @@
-################################################################
-#
-# Python package requirements for 2d-room-impulse-response-generator:
-#
-# Note that you have to edit this file to select whether you
-# want to install the CPU or GPU version of TensorFlow.
-#
-################################################################
-# General packages
-
-numpy
-matplotlib
-
-################################################################
-# TensorFlow can be installed either as CPU or GPU versions.
-# You select which one to install by (un)commenting these lines.
-
-tensorflow          # CPU Version of TensorFlow.
-# tensorflow-gpu    # GPU version of TensorFlow.
-
-################################################################
+# numpy=1.14.5
+# tensorflow
+# tensorflow-gpu
+# matplotlib

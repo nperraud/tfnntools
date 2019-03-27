@@ -91,7 +91,7 @@ class NNSystem(object):
 
         with tf.Session(config=run_config) as self._sess:
             if resume:
-                print('Load weights in the nework')
+                print('Load weights in the network')
                 self.load()
             else:
                 self._sess.run(tf.global_variables_initializer())
@@ -173,8 +173,10 @@ class NNSystem(object):
         summary = self._sess.run(self._summaries, feed_dict=feed_dict)
         self._summary_writer.add_summary(summary, self._counter)
 
-
-    def _save(self, step):
+ 
+    def _save(self, step=None):
+        if step is None:
+            step = self._counter
         if not os.path.exists(self.params['save_dir']):
             os.makedirs(self.params['save_dir'])
 
@@ -218,8 +220,14 @@ class NNSystem(object):
 
         checkpoint_dir = self.params['save_dir']
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
+        print(ckpt.model_checkpoint_path)
         if ckpt and ckpt.model_checkpoint_path:
-            self._saver.restore(self._sess, ckpt.model_checkpoint_path)
+#             self._saver.restore(self._sess, ckpt.model_checkpoint_path)
+            file = ckpt.model_checkpoint_path.split('/')[-1]
+            file_name = os.path.join(
+                self.params['save_dir'],file)
+            print('The last checkpoint is found at {}'.format(file_name))
+            self._saver.restore(self._sess, file_name)
             return True
         print(" [*] No checkpoint found in {}".format(checkpoint_dir))
         return False
