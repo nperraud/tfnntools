@@ -1,4 +1,3 @@
-import tensorflow as tf
 import numpy as np
 import os
 import pickle
@@ -6,6 +5,7 @@ from . import utils
 import time
 import yaml
 from copy import deepcopy
+import tensorflow as tf
 
 
 class NNSystem(object):
@@ -25,8 +25,6 @@ class NNSystem(object):
         d_param['summary_every'] = 200
         d_param['print_every'] = 100
         d_param['save_every'] = 10000
-
-        print('NNSysten params', len(d_param))
 
         return d_param
 

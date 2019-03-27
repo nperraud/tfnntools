@@ -1,6 +1,6 @@
-import tensorflow as tf
 import numpy as np
 from numpy import prod
+import tensorflow as tf
 
 
 def _tf_variable(name, shape, initializer):
@@ -233,6 +233,66 @@ def conv3d(imgs,
         return conv
 
 
+def deconv(x, *args, **kwargs):
+    lxs = len(x.shape)
+    if lxs == 3:
+        return deconv1d(x, *args, **kwargs)
+    elif lxs == 4:
+        return deconv2d(x, *args, **kwargs)
+    elif lxs == 5:
+        return deconv3d(x, *args, **kwargs)
+    else:
+        raise ValueError("The size of x not compatible with convolution.")
+
+
+def deconv1d(imgs,
+             nf_out,
+             shape=[5, 5],
+             stride=2,
+             name="deconv1d",
+             summary=True,
+             output_shape=None):
+
+    weights_initializer = tf.contrib.layers.xavier_initializer()
+    # weights_initializer = tf.random_normal_initializer(stddev=stddev)
+    const = tf.constant_initializer(0.0)
+    b = tf.shape(imgs)[0]
+
+    with tf.variable_scope(name):
+        # filter : [height, width, output_channels, in_channels]
+        w = _tf_variable(
+            'w', [shape[0], nf_out,
+                  imgs.get_shape()[-1]],
+            initializer=weights_initializer)
+        
+        if output_shape is None:
+            output_shape = imgs.get_shape().as_list()
+            output_shape[0] = b
+            output_shape[1] *= stride
+            output_shape[2] = w.get_shape().as_list()[1]
+
+
+        deconv = tf.contrib.nn.conv1d_transpose(imgs,
+                                                w,
+                                                output_shape=output_shape,
+                                                stride=stride)
+
+        biases = _tf_variable('biases', [nf_out], initializer=const)
+        deconv = tf.nn.bias_add(deconv, biases)
+
+        # If we are running on Leonhard we need to reshape in order for TF
+        # to explicitly know the shape of the tensor. Machines with newer
+        # TensorFlow versions do not need this.
+        if tf.__version__ == '1.3.0':
+            deconv = tf.reshape(deconv, nf_out)
+
+        if summary:
+            tf.summary.histogram("Bias_sum", biases, collections=["metrics"])
+            # we put it in metrics so we don't store it too often
+            tf.summary.histogram("Weights_sum", w, collections=["metrics"])
+        return deconv
+    
+
 def deconv2d(imgs,
              nf_out,
              shape=[5, 5],
@@ -287,33 +347,43 @@ def deconv3d(imgs,
              shape=[5, 5, 5],
              stride=2,
              name="deconv3d",
-             summary=True):
+             summary=True,
+             output_shape=None):
 
     weights_initializer = tf.contrib.layers.xavier_initializer()
-    # was
     # weights_initializer = tf.random_normal_initializer(stddev=stddev)
     const = tf.constant_initializer(0.0)
+    b = tf.shape(imgs)[0]
 
     with tf.variable_scope(name):
         # filter : [depth, height, width, output_channels, in_channels]
         w = _tf_variable(
-            'w', [
-                shape[0], shape[1], shape[2], nf_out,
-                imgs.get_shape()[-1]
-            ],
+            'w', [shape[0], shape[1], shape[2],
+                nf_out, imgs.get_shape()[-1]],
             initializer=weights_initializer)
 
-        deconv = tf.nn.conv3d_transpose(
-            imgs,
-            w,
-            output_shape=output_shape,
-            strides=[1, stride, stride, stride, 1])
+        if output_shape is None:
+            output_shape = imgs.get_shape().as_list()
+            output_shape[0] = b
+            output_shape[1] *= stride
+            output_shape[2] *= stride
+            output_shape[3] *= stride
+            output_shape[4] = w.get_shape().as_list()[3]
+        
+        deconv = tf.nn.conv3d_transpose(imgs,
+                                        w,
+                                        output_shape=output_shape,
+                                        strides=[1, stride, stride, stride, 1])
 
-        biases = _tf_variable(
-            'biases', [nf_out],
-            initializer=const)  # one bias for each filter
+        biases = _tf_variable('biases', [nf_out], initializer=const)  # one bias for each filter
         deconv = tf.nn.bias_add(deconv, biases)
 
+        # If we are running on Leonhard we need to reshape in order for TF
+        # to explicitly know the shape of the tensor. Machines with newer
+        # TensorFlow versions do not need this.
+        if tf.__version__ == '1.3.0':
+            deconv = tf.reshape(deconv, nf_out)
+        
         if summary:
             tf.summary.histogram("Bias_sum", biases, collections=["metrics"])
             # we put it in metrics so we don't store it too often
