@@ -16,7 +16,6 @@ class NNSystem(object):
         d_param['optimization']['learning_rate'] = 1e-4
         d_param['optimization']['batch_size'] = 8
         d_param['optimization']['epoch'] = 100
-        d_param['optimization']['batch_size'] = 8
 
         d_param['net'] = dict()
 
@@ -29,6 +28,7 @@ class NNSystem(object):
 
     def __init__(self, model, params={}, name=None, debug_mode=False):
         """Build the TF graph."""
+        tf.reset_default_graph()
         self._debug_mode=debug_mode
         if self._debug_mode:
             print('User parameters NNSystem...')
@@ -233,8 +233,11 @@ class NNSystem(object):
         return False
 
 
-    def outputs(self, checkpoint=None, **kwargs):
+    def outputs(self, checkpoint=None, sess=None, **kwargs):
         outputs = self._net.outputs
+        if sess is not None:
+            feed_dict = self._get_dict(**kwargs)
+            return self._sess.run(outputs, feed_dict=feed_dict)
 
         with tf.Session() as self._sess:
 
@@ -268,7 +271,6 @@ class NNSystem(object):
     @property
     def net(self):
         return self._net
-        
 
 class ValidationNNSystem(NNSystem):
     def __init__(self, *args, **kwargs):

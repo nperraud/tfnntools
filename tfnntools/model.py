@@ -32,10 +32,7 @@ class BaseNet(object):
         self._build_net()
         self._add_summary()
 
-    def _build_net(self, inputs):
-        raise ValueError('This is an abstract class')
-
-    def batch2dict(self, inputs):
+    def _build_net(self):
         raise ValueError('This is an abstract class')
 
     def _add_summary(self):
@@ -61,6 +58,5 @@ class BaseNet(object):
     def params(self):
         return self._params
 
-    @staticmethod
     def batch2dict(batch):
         raise NotImplementedError("This is a an abstract class.")
