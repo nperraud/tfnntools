@@ -16,6 +16,7 @@ class NNSystem(object):
         d_param['optimization']['learning_rate'] = 1e-4
         d_param['optimization']['batch_size'] = 8
         d_param['optimization']['epoch'] = 100
+        d_param['optimization']['kwargs'] = dict()
 
         d_param['net'] = dict()
 
@@ -54,7 +55,8 @@ class NNSystem(object):
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             learning_rate = self._params['optimization']['learning_rate']
-            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+            kwargs = self._params['optimization']['kwargs']
+            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, **kwargs)
             self._optimize = optimizer.minimize(self._net.loss)
         tf.summary.scalar("training/loss", self._net.loss, collections=["train"])
 
@@ -119,7 +121,7 @@ class NNSystem(object):
                             self._params['curr_counter'] = self._counter
                         feed_dict = self._get_dict(**self._net.batch2dict(batch))
                         curr_loss = self._run_optimization(feed_dict, idx)
-                        # epoch_loss += curr_loss
+#                         epoch_loss += curr_loss
 
                         if np.mod(self._counter, self.params['print_every']) == 0:
                             # self._print_log(idx, curr_loss, epoch_loss/idx)
