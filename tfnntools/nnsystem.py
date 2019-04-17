@@ -7,7 +7,6 @@ import time
 import yaml
 from copy import deepcopy
 
-
 class NNSystem(object):
     """A system to handle Neural Network"""
     def default_params(self):
@@ -56,9 +55,18 @@ class NNSystem(object):
         with tf.control_dependencies(update_ops):
             learning_rate = self._params['optimization']['learning_rate']
             kwargs = self._params['optimization']['kwargs']
-            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, **kwargs)
-            self._optimize = optimizer.minimize(self._net.loss)
+            self._optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, **kwargs)
+            self._optimize = self._optimizer.minimize(self._net.loss)
         tf.summary.scalar("training/loss", self._net.loss, collections=["train"])
+        
+        
+        # Gradient norm summary
+        with tf.name_scope('gradients'):
+            for g,v in self._optimizer.compute_gradients(self._net.loss):
+                tf_last_grad_norm = tf.sqrt(tf.reduce_mean(g**2))
+                name = v.name.split('/')[-1]
+                name = name.replace(':','')
+                tf_gradnorm_summary = tf.summary.scalar('grad_norm_{}'.format(name), tf_last_grad_norm,collections=["train"])
 
     def _get_dict(self, index=None, **kwargs):
         """Return a dictionary with the argument for the architecture."""
@@ -76,11 +84,17 @@ class NNSystem(object):
             new_feed_dict[key] = value[index]
         return new_feed_dict
 
-    def train(self, dataset, resume=False):
+    def train(self, dataset, resume=False, checkpoint=None):
 
         n_data = dataset.N
         batch_size = self.params['optimization']['batch_size']
-        self._counter = 1
+        if resume:
+            if checkpoint:
+                self._counter = checkpoint
+            else:
+                self._counter = self.params['curr_counter']
+        else:
+            self._counter = 0
         self._n_epoch = self.params['optimization']['epoch']
         self._total_iter = self._n_epoch * (n_data // batch_size) - 1
         self._n_batch = n_data // batch_size
@@ -94,7 +108,7 @@ class NNSystem(object):
         with tf.Session(config=run_config) as self._sess:
             if resume:
                 print('Load weights in the network')
-                self.load()
+                self.load(sess=self._sess, checkpoint=checkpoint)
             else:
                 self._sess.run(tf.global_variables_initializer())
                 utils.saferm(self.params['summary_dir'])
@@ -113,15 +127,18 @@ class NNSystem(object):
                     epoch_loss = 0.
                     for idx, batch in enumerate(
                             dataset.iter(batch_size)):
-
-                        if resume:
-                            self._counter = self.params['curr_counter']
-                            resume = False
-                        else:
-                            self._params['curr_counter'] = self._counter
                         feed_dict = self._get_dict(**self._net.batch2dict(batch))
+
+#                         curr_loss = self.net.loss.eval(feed_dict)
+#                         if np.isnan(curr_loss):
+#                             self._save()
+#                             return batch_old, feed_dict_old
+#                         batch_old = batch
+#                         feed_dict_old = feed_dict
                         curr_loss = self._run_optimization(feed_dict, idx)
-#                         epoch_loss += curr_loss
+#                        epoch_loss += curr_loss
+                        self._counter += 1
+                        self._params['curr_counter'] = self._counter
 
                         if np.mod(self._counter, self.params['print_every']) == 0:
                             # self._print_log(idx, curr_loss, epoch_loss/idx)
@@ -133,7 +150,6 @@ class NNSystem(object):
                         if (np.mod(self._counter, self.params['save_every']) == 0) | self._save_current_step:
                             self._save(self._counter)
                             self._save_current_step = False
-                        self._counter += 1
                     # epoch_loss /= self._n_batch
                     # print(" - Epoch {}, train loss: {:f}".format(self._epoch, epoch_loss))
 
@@ -234,12 +250,11 @@ class NNSystem(object):
         print(" [*] No checkpoint found in {}".format(checkpoint_dir))
         return False
 
-
-    def outputs(self, checkpoint=None, sess=None, **kwargs):
-        outputs = self._net.outputs
+    
+    def eval(self, tensor, checkpoint=None, sess=None, **kwargs):
         if sess is not None:
             feed_dict = self._get_dict(**kwargs)
-            return self._sess.run(outputs, feed_dict=feed_dict)
+            return self._sess.run(tensor, feed_dict=feed_dict)
 
         with tf.Session() as self._sess:
 
@@ -251,8 +266,23 @@ class NNSystem(object):
             self._sess.run([tf.local_variables_initializer()])
             feed_dict = self._get_dict(**kwargs)
 
-            return self._sess.run(outputs, feed_dict=feed_dict)
+            return self._sess.run(tensor, feed_dict=feed_dict)
 
+    def outputs(self, **kwargs):
+        outputs = self._net.outputs
+        return self.eval(outputs, **kwargs)
+
+    def get_var(self, name, checkpoint=None):
+        var = [v for v in tf.global_variables() if v.name == name][0]
+        with tf.Session() as self._sess:
+
+            if self.load(checkpoint=checkpoint):
+                print("Model loaded.")
+            else:
+                raise ValueError("Unable to load the model")
+            val = var.eval()
+        return val
+    
     def loss(self, dataset, checkpoint=None):
         with tf.Session() as self._sess:
 
