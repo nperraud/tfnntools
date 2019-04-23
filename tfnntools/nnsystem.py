@@ -56,6 +56,8 @@ class NNSystem(object):
             learning_rate = self._params['optimization']['learning_rate']
             kwargs = self._params['optimization']['kwargs']
             self._optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, **kwargs)
+#             self._gradients = self._optimizer.compute_gradients(self._net.loss)
+#             self._optimize = self._optimizer.apply_gradients(self._gradients)
             self._optimize = self._optimizer.minimize(self._net.loss)
         tf.summary.scalar("training/loss", self._net.loss, collections=["train"])
         
@@ -124,7 +126,7 @@ class NNSystem(object):
 
                 print('Start training')
                 while self._epoch < self._n_epoch:
-                    epoch_loss = 0.
+#                     epoch_loss = 0.
                     for idx, batch in enumerate(
                             dataset.iter(batch_size)):
                         feed_dict = self._get_dict(**self._net.batch2dict(batch))
@@ -160,11 +162,11 @@ class NNSystem(object):
             self._save(self._counter)
 
     def _run_optimization(self, feed_dict, idx):
-            if idx==0:
-                self._epoch_loss = 0
-            curr_loss = self._sess.run([self.net.loss, self._optimize], feed_dict)[0]
-            self._epoch_loss += curr_loss
-            return curr_loss
+        if idx==0:
+            self._epoch_loss = 0
+        curr_loss = self._sess.run([self.net.loss, self._optimize], feed_dict)[0]
+        self._epoch_loss += curr_loss
+        return curr_loss
 
     def _print_log(self, idx, curr_loss):
         current_time = time.time()
