@@ -46,7 +46,7 @@ class NNSystem(object):
         self._params['net'] = deepcopy(self.net.params)
         self._name = self._net.name
         self._add_optimizer()
-        self._saver = tf.train.Saver(tf.global_variables(), max_to_keep=100)
+        self._saver = tf.train.Saver(tf.global_variables(), max_to_keep=500)
         utils.show_all_variables()
         self._summaries = tf.summary.merge(tf.get_collection("train"))
 
