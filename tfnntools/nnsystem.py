@@ -105,8 +105,11 @@ class NNSystem(object):
 
         # Create the save diretory if it does not exist
         os.makedirs(self._params['save_dir'], exist_ok=True)
-        run_config = tf.ConfigProto()
+#         run_config = tf.ConfigProto()
 
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0, allow_growth=True)
+        run_config = tf.ConfigProto(allow_soft_placement=True,
+                                    gpu_options=gpu_options)
         with tf.Session(config=run_config) as self._sess:
             if resume:
                 print('Load weights in the network')
