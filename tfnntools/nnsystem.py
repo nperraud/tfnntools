@@ -134,19 +134,11 @@ class NNSystem(object):
 
                 print('Start training')
                 while self._epoch < self._n_epoch:
-#                     epoch_loss = 0.
                     for idx, batch in enumerate(
                             dataset.iter(batch_size)):
                         feed_dict = self._get_dict(**self._net.batch2dict(batch))
 
-#                         curr_loss = self.net.loss.eval(feed_dict)
-#                         if np.isnan(curr_loss):
-#                             self._save()
-#                             return batch_old, feed_dict_old
-#                         batch_old = batch
-#                         feed_dict_old = feed_dict
                         curr_loss = self._run_optimization(feed_dict, idx)
-#                        epoch_loss += curr_loss
                         self._counter += 1
                         self._params['curr_counter'] = self._counter
 
@@ -160,8 +152,7 @@ class NNSystem(object):
                         if (np.mod(self._counter, self.params['save_every']) == 0) | self._save_current_step:
                             self._save(self._counter)
                             self._save_current_step = False
-                    # epoch_loss /= self._n_batch
-                    # print(" - Epoch {}, train loss: {:f}".format(self._epoch, epoch_loss))
+
 
                     self._epoch += 1
                 print('Training done')
