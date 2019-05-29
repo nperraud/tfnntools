@@ -34,16 +34,21 @@ class NNSystem(object):
             print('User parameters NNSystem...')
             print(yaml.dump(params))
 
-        self._params = deepcopy(utils.arg_helper(params, self.default_params()))
+        params['net'] = params.get('net', dict())
+        if name:
+            self._net = model(params['net'], name=name)
+        else:
+            self._net = model(params['net'])
+        # Handle default params
+        params['net'] = deepcopy(self.net.params)
+        params_d = self.default_params()
+        params_d['net'] = deepcopy(self.net.params)
+        self._params = deepcopy(utils.arg_helper(params, params_d))
+        
         if self._debug_mode:
             print('\nParameters used for the NNSystem..')
             print(yaml.dump(self._params))
-        tf.reset_default_graph()
-        if name:
-            self._net = model(self.params['net'], name=name)
-        else:
-            self._net = model(self.params['net'])
-        self._params['net'] = deepcopy(self.net.params)
+         
         self._name = self._net.name
         self._add_optimizer()
         self._saver = tf.train.Saver(tf.global_variables(), max_to_keep=500)
