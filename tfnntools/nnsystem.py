@@ -24,6 +24,7 @@ class NNSystem(object):
         d_param['summary_every'] = 200
         d_param['print_every'] = 100
         d_param['save_every'] = 10000
+        d_param['curr_counter'] = None
         return d_param
 
     def __init__(self, model, params={}, name=None, debug_mode=False):
