@@ -27,8 +27,10 @@ class NNSystem(object):
         d_param['curr_counter'] = None
         return d_param
 
-    def __init__(self, model, params={}, name=None, debug_mode=False):
+    def __init__(self, model, params=None, name=None, debug_mode=False):
         """Build the TF graph."""
+        if params is None:
+            params = {}
         tf.reset_default_graph()
         self._debug_mode=debug_mode
         if self._debug_mode:
