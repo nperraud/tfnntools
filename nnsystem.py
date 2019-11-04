@@ -59,7 +59,7 @@ class NNSystem(object):
 #             self._gradients = self._optimizer.compute_gradients(self._net.loss)
 #             self._optimize = self._optimizer.apply_gradients(self._gradients)
             self._optimize = self._optimizer.minimize(self._net.loss)
-        tf.summary.scalar("training/loss", self._net.loss, collections=["train"])
+        #tf.summary.scalar("training/loss", self._net.loss, collections=["train"])
         
         
         # Gradient norm summary
@@ -128,8 +128,22 @@ class NNSystem(object):
                 self._time['prev_iter_time'] = self._time['start_time']
 
                 print('Start training')
+                lr_init = self._params['optimization']['learning_rate']
                 while self._epoch < self._n_epoch:
 #                     epoch_loss = 0.
+                    
+                    #weight decaying
+                    lr = self._params['optimization']['learning_rate']
+                    new_lr = tf.compat.v1.train.exponential_decay(lr_init, self._epoch,
+                                                                  decay_steps = 5,
+                                                                  decay_rate=0.95,
+                                                                  staircase=True)
+                    #new_lr = tf.math.maximum(new_lr, 0.000001)
+                    new_lr = self._sess.run(new_lr)
+                    #new_lr = np.max([new_lr, 0.00001])
+                    self._params['optimization']['learning_rate']=new_lr
+                    print("learning rate : %f"%self._params['optimization']['learning_rate'])
+                    
                     for idx, batch in enumerate(
                             dataset.iter(batch_size)):
                         feed_dict = self._get_dict(**self._net.batch2dict(batch))
@@ -140,7 +154,7 @@ class NNSystem(object):
 #                             return batch_old, feed_dict_old
 #                         batch_old = batch
 #                         feed_dict_old = feed_dict
-                        curr_loss = self._run_optimization(feed_dict, idx)
+                        curr_loss = self._run_optimization(feed_dict, idx, self._epoch)
 #                        epoch_loss += curr_loss
                         self._counter += 1
                         self._params['curr_counter'] = self._counter
