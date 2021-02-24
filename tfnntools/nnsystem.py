@@ -7,6 +7,15 @@ import time
 import yaml
 from copy import deepcopy
 
+
+tf_config = tf.ConfigProto()
+tf_config.gpu_options.allow_growth = (
+    True  # dynamically grow the memory used on the GPU
+)
+tf_config.log_device_placement = (
+    True  # to log device placement (on which device the operation ran)
+)
+
 class NNSystem(object):
     """A system to handle Neural Network"""
     def default_params(self):
@@ -115,10 +124,10 @@ class NNSystem(object):
         os.makedirs(self._params['save_dir'], exist_ok=True)
 #         run_config = tf.ConfigProto()
 
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0, allow_growth=True)
-        run_config = tf.ConfigProto(allow_soft_placement=True,
-                                    gpu_options=gpu_options)
-        with tf.Session(config=run_config) as self._sess:
+#         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.0, allow_growth=True)
+#         run_config = tf.ConfigProto(allow_soft_placement=True,
+#                                     gpu_options=gpu_options)
+        with tf.Session(config=tf_config) as self._sess:
             if resume:
                 print('Load weights in the network')
                 self.load(sess=self._sess, checkpoint=checkpoint)
@@ -260,7 +269,7 @@ class NNSystem(object):
             feed_dict = self._get_dict(**kwargs)
             return self._sess.run(tensor, feed_dict=feed_dict)
 
-        with tf.Session() as self._sess:
+        with tf.Session(config=tf_config) as self._sess:
 
             if self.load(checkpoint=checkpoint):
                 print("Model loaded.")
@@ -278,7 +287,7 @@ class NNSystem(object):
 
     def get_var(self, name, checkpoint=None):
         var = [v for v in tf.global_variables() if v.name == name][0]
-        with tf.Session() as self._sess:
+        with tf.Session(config=tf_config) as self._sess:
 
             if self.load(checkpoint=checkpoint):
                 print("Model loaded.")
@@ -288,7 +297,7 @@ class NNSystem(object):
         return val
     
     def loss(self, dataset, checkpoint=None):
-        with tf.Session() as self._sess:
+        with tf.Session(config=tf_config) as self._sess:
 
             if self.load(checkpoint=checkpoint):
                 print("Model loaded.")
